@@ -1,27 +1,34 @@
-import React, {useState} from "react";
-import {Circle, FeatureGroup, MapContainer, Marker, Popup, TileLayer, useMapEvents} from "react-leaflet";
+import React, {useEffect, useState} from "react";
+import {Circle, FeatureGroup, MapContainer, Popup, TileLayer, useMapEvents} from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
 const App = () => {
     const initialZoom = 10;
-    const width_set = 765;
-    const height_set = 1365;
 
     const [zoom, setZoom] = useState(initialZoom);
     const [lat, setLat] = useState(46.9639705);
     const [long, setLong] = useState(28.8933602);
 
-    const handleCord = (onClick: any) => {
-        const locations = onClick;
-        console.log('location', locations.lat);
-        setLat(locations.lat);
-        setLong(locations.lng)
+    const handleDrag = (onClick: any) => {
+        setLong(onClick.lat);
+        setLong(onClick.lng)
     };
 
-    const handleZoomChange = (newZoom: any) => {
-        setZoom(newZoom);
-        console.log("zoom:", newZoom);
+    const handleZoomChange = (data: any) => {
+        const zoom = data._zoom;
+        const lat = data.getCenter().lat;
+        const long = data.getCenter().lng;
+        setLong(long);
+        setLat(lat);
+        setZoom(zoom);
     };
+
+    useEffect(() => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+        setZoom(9),
+            setLat(46.9639705),
+            setLong(28.8933602)
+    }, []);
 
     return (
         <div>
@@ -29,99 +36,68 @@ const App = () => {
             <MapContainer
                 center={[lat, long]}
                 zoom={initialZoom}
-                style={{width: width_set, height: height_set, opacity: 0.4, zIndex: 1, position: "absolute", color: "red"}}
+                style={{width: '100%', height: '93vh', zIndex: 1, opacity: 0.5, position: "absolute", color: "red"}}
+                minZoom={3}
+                maxZoom={9}
             >
                 <TileLayer
+                    opacity={0}
                     url="
-                    https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png
-                    "
+                    https://tile.openstreetmap.org/{z}/{x}/{y}.png
+                   "
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 ></TileLayer>
-                <FeatureGroup pathOptions={{color: 'purple'}}>
+
+                <FeatureGroup pathOptions={{color: 'red'}}>
                     <Popup>Turbina 12</Popup>
-                    <Circle center={[47.2315535, 28.8933602]} radius={4000}/>
+                    <Circle center={[46.63674412, 29.41114253]} radius={4000}/>
                 </FeatureGroup>
-                <FeatureGroup pathOptions={{color: 'purple'}}>
+                <FeatureGroup pathOptions={{color: 'red'}}>
                     <Popup>Turbina 11</Popup>
-                    <Circle center={[47.5532364, 28.8933602]} radius={4000}/>
+                    <Circle center={[47.5011236, 28.36536236]} radius={4000}/>
                 </FeatureGroup>
-                <FeatureGroup pathOptions={{color: 'purple'}}>
+                <FeatureGroup pathOptions={{color: 'red'}}>
                     <Popup>Turbina 1</Popup>
                     <Circle center={[47.9639705, 28.8933602]} radius={4000}/>
                 </FeatureGroup>
-                <FeatureGroup pathOptions={{color: 'purple'}}>
+                <FeatureGroup pathOptions={{color: 'red'}}>
                     <Popup>Turbina 2</Popup>
-                    <Circle center={[45.9639705, 27.8933602]} radius={4000}/>
+                    <Circle center={[46.06169345, 28.83078123]} radius={4000}/>
                 </FeatureGroup>
-                <FeatureGroup pathOptions={{color: 'purple'}}>
+                <FeatureGroup pathOptions={{color: 'red'}}>
                     <Popup>Turbina 3</Popup>
-                    <Circle center={[45.9639705, 27.8933602]} radius={4000}/>
+                    <Circle center={[48.15659234, 28.28489453]} radius={4000}/>
                 </FeatureGroup>
-                <ZoomTracker onZoomChange={handleZoomChange}/>
-                {/*<AddMarkerToClick/>*/}
-                <MyComponent onClick={handleCord}/>
+                <MapEvent onDrag={handleDrag} onZoomChange={handleZoomChange}/>
             </MapContainer>
-            <div style={{opacity: 0.9, zIndex: 100, width: '765px', height: '1365px'}}>
+            <div style={{zIndex: 100}}>
+
                 <iframe
-                    id="windyMap"
-                    title="Windy Map"
-                    width={width_set}
-                    height={height_set}
+                    loading={'lazy'}
+                    width={'100%'}
+                    height={'900vh'}
                     src={`
                 https://embed.windy.com/embed.html?type=map&location=location&metricRain=default&metricTemp=default&metricWind=default&zoom=${zoom}&overlay=wind&product=ecmwf&level=surface&lat=${lat}&lon=${long}
                 `}
                 ></iframe>
             </div>
+
+
         </div>
     );
 };
+
 // @ts-ignore
-const ZoomTracker = ({onZoomChange}) => {
+function MapEvent({onDrag, onZoomChange}) {
     useMapEvents({
-        zoomend: (event) => {
-            const newZoom = event.target._zoom;
-            onZoomChange(newZoom);
+        drag: (e) => {
+            onDrag(e.target.getCenter())
         },
-    });
-
-    return null;
-};
-
-// @ts-ignore
-function MyComponent({onClick}) {
-    const map = useMapEvents({
-        dragend: (e) => {
-            console.log("map center", e);
-            onClick(e.target.getCenter())
-        },
-        predrag: (e) => {
-            console.log('predrag', e);
+        zoom: (e) => {
+            onZoomChange(e.target);
         }
     });
     return null
-}
-
-function AddMarkerToClick() {
-
-    const [markers, setMarkers] = useState([]);
-
-    const map = useMapEvents({
-        click(e) {
-            const newMarker = e.latlng;
-            // @ts-ignore
-            setMarkers([...markers, newMarker]);
-        },
-    });
-
-    return (
-        <>
-            {markers.map(marker =>
-                <Marker position={marker}>
-                    <Popup>!!!</Popup>
-                </Marker>
-            )}
-        </>
-    )
 }
 
 export default App;
